@@ -1,0 +1,6 @@
+@BitirmeTezi_HostAddress = http://localhost:5113
+
+GET {{BitirmeTezi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
