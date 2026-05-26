@@ -14,11 +14,7 @@ namespace BitirmeTezi.Repository
             _context = context;
         }
 
-        /// <summary>
-        ///                  YARIN BURALAR DÜZENLENECEK BİRADER HA
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
+        
         public async Task<List<StudentResultDto>> GetStudentsAsync()
         {
             try
