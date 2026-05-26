@@ -1,0 +1,9 @@
+﻿# Derleme dosyaları
+bin/
+obj/
+.vs/
+
+# Büyük Medya ve AI Araçları (GitHub'ı patlatanlar)
+*.exe
+*.bin
+*.dllcd
