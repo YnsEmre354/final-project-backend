@@ -29,7 +29,7 @@ namespace BitirmeTezi.Data
 
             modelBuilder.Entity<Course>().HasQueryFilter(c => c.IsActive);
             modelBuilder.Entity<Lesson>().HasQueryFilter(l => l.IsActive);
-            modelBuilder.Entity<Student>().HasQueryFilter(s => s.IsActive);
+
 
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {

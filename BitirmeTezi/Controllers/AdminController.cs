@@ -70,7 +70,7 @@ namespace BitirmeTezi.Controllers
         }
 
         [HttpPost("soft-delete-user")]
-        public async Task<IActionResult> SoftDeleteUser([FromBody]string userId)
+        public async Task<IActionResult> SoftDeleteUser([FromQuery] string userId)
         {
             try
             {
@@ -90,7 +90,7 @@ namespace BitirmeTezi.Controllers
         }
 
         [HttpPost("active-user")]
-        public async Task<IActionResult> ActiveUser([FromBody] string userId)
+        public async Task<IActionResult> ActiveUser([FromQuery]string userId)
         {
             try
             {
