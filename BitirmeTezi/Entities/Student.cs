@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BitirmeTezi.Entities
@@ -25,5 +25,13 @@ namespace BitirmeTezi.Entities
         public string? Gender { get; set; }
         public Guid UserId { get; set; } = Guid.NewGuid();
 
+        // Email Verification
+        public bool IsEmailVerified { get; set; } = false;
+        public string? EmailVerificationToken { get; set; }
+        public DateTime? EmailVerificationTokenExpiry { get; set; }
+
+        // Password Reset
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiry { get; set; }
     }
 }

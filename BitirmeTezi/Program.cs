@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using BitirmeTezi.Data;
 using BitirmeTezi.Interface;
 using BitirmeTezi.Repository;
@@ -18,6 +18,16 @@ builder.Services.AddDbContext<DataContext>(options =>
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFlutterWebDev", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -27,6 +37,12 @@ builder.Services.AddScoped<UserService>();
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings")
 );
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings")
+);
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<TokenService>();
 
 builder.WebHost.UseUrls(
     "http://0.0.0.0:5260",
@@ -54,6 +70,7 @@ builder.Services.AddAuthentication("Bearer")
     });
 
 var app = builder.Build();
+app.UseCors("AllowFlutterWebDev");
 
 
 await Xabe.FFmpeg.Downloader.FFmpegDownloader.GetLatestVersion(Xabe.FFmpeg.Downloader.FFmpegVersion.Official);

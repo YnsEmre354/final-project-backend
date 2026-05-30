@@ -1,4 +1,4 @@
-﻿using BitirmeTezi.Auth;
+using BitirmeTezi.Auth;
 using BitirmeTezi.Data;
 using BitirmeTezi.Entities;
 using BitirmeTezi.Enums;
@@ -121,7 +121,14 @@ namespace BitirmeTezi.Controllers
 
                 var registerUserId = await _repository.GetIdByGuid(resultString);
 
-                await _userService.InitializeUserSkillEnrollemntAsync(registerUserId, _context);
+                // Reactivation durumunda enrollment zaten var olabilir; duplicate oluşmasın
+                var hasExistingEnrollments = await _context.UserSkillEnrollments
+                    .AnyAsync(e => e.StudentId == registerUserId);
+
+                if (!hasExistingEnrollments)
+                {
+                    await _userService.InitializeUserSkillEnrollemntAsync(registerUserId, _context);
+                }
 
                 return Ok();
 

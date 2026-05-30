@@ -1,4 +1,4 @@
-﻿using BitirmeTezi.Data;
+using BitirmeTezi.Data;
 using BitirmeTezi.Interface;
 using BitirmeTezi.ModelsDto.Student;
 using Microsoft.Data.SqlClient;
@@ -56,12 +56,49 @@ namespace BitirmeTezi.Repository
         {
             try
             {
+                // 1. Email ile mevcut kayıt var mı kontrol et
+                var existingStudent = await _context.Students
+                    .FirstOrDefaultAsync(s => s.Email == email);
 
+                if (existingStudent != null)
+                {
+                    // Aktif hesap → eski davranış: -1 döndür
+                    if (existingStudent.IsActive)
+                    {
+                        return "-1";
+                    }
+
+                    // Pasif hesap → reactivation yolu
+                    // Username başka aktif kullanıcıda var mı kontrol et
+                    var usernameTaken = await _context.Students
+                        .AnyAsync(s => s.Username == username
+                                    && s.IsActive
+                                    && s.Id != existingStudent.Id);
+                    if (usernameTaken)
+                    {
+                        return "-2";
+                    }
+
+                    // Pasif kaydı güncelle ve aktifleştir
+                    existingStudent.Name = name;
+                    existingStudent.Surname = surname;
+                    existingStudent.Username = username;
+                    existingStudent.PasswordHash = password;
+                    existingStudent.NativeLanguage = nativeLanguage;
+                    existingStudent.Gender = gender;
+                    existingStudent.IsActive = true;
+                    existingStudent.UpdatedDate = DateTime.UtcNow;
+
+                    await _context.SaveChangesAsync();
+
+                    return existingStudent.UserId.ToString();
+                }
+
+                // 2. Email hiç yoksa normal sp_AddStudent akışı
                 var list = await _context.Database
                                     .SqlQuery<string>($"EXEC sp_AddStudent @Name={name}, @Surname={surname}, @Username={username}, @Email={email}, @PasswordHash={password}, @NativeLanguage={nativeLanguage}, @Gender={gender}")
                                     .ToListAsync();
                 var result = list.FirstOrDefault();
-
 
                 return result!;
             }
