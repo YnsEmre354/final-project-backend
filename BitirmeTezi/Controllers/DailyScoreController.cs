@@ -33,9 +33,14 @@ namespace BitirmeTezi.Controllers
                 var today = DateTime.UtcNow.Date;
                 var tomorrow = today.AddDays(1);
 
-                var leaderboardList = await _context.UserDailyScores
+                var dailyScores = await _context.UserDailyScores
                                     .Where(d => d.EarnDate >= today && d.EarnDate < tomorrow)
                                     .ToListAsync();
+
+                var leaderboardList = dailyScores
+                              .GroupBy(d => new { d.UserId, d.SkillType }) 
+                              .Select(g => g.OrderByDescending(x => x.EarnDate).First())
+                              .ToList();
 
                 var userNickNameList = await _context.Students
                                             .ToDictionaryAsync(

@@ -1,4 +1,5 @@
-﻿using BitirmeTezi.ModelsDto.Student;
+﻿using BitirmeTezi.Entities;
+using BitirmeTezi.ModelsDto.Student;
 
 namespace BitirmeTezi.Interface
 {
@@ -11,6 +12,7 @@ namespace BitirmeTezi.Interface
         Task<int> ChangePasswordAsync(Guid userId, string oldPassword ,string newPassword);
         Task<int> ChangeUsernameAsync(Guid userId, string newUsername);
         Task<int> DeleteUserAsync(Guid userId);
+        Task<Student> GetUser(Guid userId);
 
         Task<int> GetIdByGuid(Guid userId);
     }

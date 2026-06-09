@@ -1,4 +1,5 @@
 using BitirmeTezi.Data;
+using BitirmeTezi.Entities;
 using BitirmeTezi.Interface;
 using BitirmeTezi.ModelsDto.Student;
 using Microsoft.Data.SqlClient;
@@ -190,6 +191,19 @@ namespace BitirmeTezi.Repository
                 var result = list.FirstOrDefault();
 
                 return result;
+            }
+            catch (SqlException e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+        public async Task<Student> GetUser(Guid userId)
+        {
+            try
+            {
+                var student = await _context.Students.FirstOrDefaultAsync(s => s.UserId == userId);
+
+                return student;
             }
             catch (SqlException e)
             {
