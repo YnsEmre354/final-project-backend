@@ -1,4 +1,4 @@
-﻿using BitirmeTezi.ModelsDto.Question.Listening;
+using BitirmeTezi.ModelsDto.Question.Listening;
 using BitirmeTezi.ModelsDto.Question.Reading;
 using BitirmeTezi.ModelsDto.Question.Speaking;
 using BitirmeTezi.ModelsDto.Question.Writing;
@@ -181,7 +181,7 @@ namespace BitirmeTezi.Service
 
                 return JsonSerializer.Deserialize<ReadingContentDto>(rawText, JsonOpts);
             }
-            catch (JsonException ex) { Console.WriteLine($"[Reading JSON Hatası] {ex.Message}"); throw; }
+            catch (JsonException ex) { Console.WriteLine($"[Reading JSON Hatası] {ex.Message}"); return null; }
             catch (Exception ex) { Console.WriteLine($"[Reading Hatası] {ex.Message}"); return null; }
         }
 
@@ -262,7 +262,7 @@ namespace BitirmeTezi.Service
 
                 return JsonSerializer.Deserialize<ListeningContentDto>(rawText, JsonOpts);
             }
-            catch (JsonException ex) { Console.WriteLine($"[Listening JSON Hatası] {ex.Message}"); throw; }
+            catch (JsonException ex) { Console.WriteLine($"[Listening JSON Hatası] {ex.Message}"); return null; }
             catch (Exception ex) { Console.WriteLine($"[Listening Hatası] {ex.Message}"); return null; }
         }
 
@@ -329,7 +329,7 @@ namespace BitirmeTezi.Service
 
                 return JsonSerializer.Deserialize<WritingTaskDto>(rawText, JsonOpts);
             }
-            catch (JsonException ex) { Console.WriteLine($"[WritingTask JSON Hatası] {ex.Message}"); throw; }
+            catch (JsonException ex) { Console.WriteLine($"[WritingTask JSON Hatası] {ex.Message}"); return null; }
             catch (Exception ex) { Console.WriteLine($"[WritingTask Hatası] {ex.Message}"); return null; }
         }
 
@@ -411,7 +411,7 @@ namespace BitirmeTezi.Service
 
                 return JsonSerializer.Deserialize<WritingEvaluationDto>(rawText, JsonOpts);
             }
-            catch (JsonException ex) { Console.WriteLine($"[Evaluation JSON Hatası] {ex.Message}"); throw; }
+            catch (JsonException ex) { Console.WriteLine($"[Evaluation JSON Hatası] {ex.Message}"); return null; }
             catch (Exception ex) { Console.WriteLine($"[Evaluation Hatası] {ex.Message}"); return null; }
         }
 
@@ -510,7 +510,7 @@ namespace BitirmeTezi.Service
 
                 return JsonSerializer.Deserialize<SpeakingContentDto>(rawText, JsonOpts);
             }
-            catch (JsonException ex) { Console.WriteLine($"[Speaking JSON Hatası] {ex.Message}"); throw; }
+            catch (JsonException ex) { Console.WriteLine($"[Speaking JSON Hatası] {ex.Message}"); return null; }
             catch (Exception ex) { Console.WriteLine($"[Speaking Hatası] {ex.Message}"); return null; }
         }
         public async Task<SpeakingEvaluationDto> EvaluateSpeakingAsync(string level, string transcriptText, string topic, string instructions)
@@ -588,7 +588,7 @@ namespace BitirmeTezi.Service
 
                 return JsonSerializer.Deserialize<SpeakingEvaluationDto>(rawText, JsonOpts);
             }
-            catch (JsonException ex) { Console.WriteLine($"[Speaking JSON Hatası] {ex.Message}"); throw; }
+            catch (JsonException ex) { Console.WriteLine($"[Speaking JSON Hatası] {ex.Message}"); return null; }
             catch (Exception ex) { Console.WriteLine($"[Speaking Değerlendirme Hatası] {ex.Message}"); return null; }
         }
     }

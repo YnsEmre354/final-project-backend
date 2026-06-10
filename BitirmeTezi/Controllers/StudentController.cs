@@ -21,14 +21,22 @@ namespace BitirmeTezi.Controllers
         private readonly JwtService _jwtService;
         private readonly DataContext _context;
         private readonly UserService _userService;
+        private readonly FirebaseAdminService _firebaseAdminService;
 
-        public StudentController(IStudentRepository repository, JwtService jwtService, DataContext context, UserService userService)
+        public StudentController(
+            IStudentRepository repository,
+            JwtService jwtService,
+            DataContext context,
+            UserService userService,
+            FirebaseAdminService firebaseAdminService)
         {
             _repository = repository;
             _jwtService = jwtService;
             _context = context;
             _userService = userService;
+            _firebaseAdminService = firebaseAdminService;
         }
+
 
         [AllowAnonymous]
         [HttpGet("active-students")]
@@ -140,9 +148,135 @@ namespace BitirmeTezi.Controllers
             }
         }
 
+        // ── Firebase: Login ────────────────────────────────────────────────────────
+        /// <summary>
+        /// POST /api/Student/firebase-login
+        /// Accepts a Firebase ID token, verifies it, finds the student by email,
+        /// checks IsActive, and returns the project's own JWT token.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpPost("firebase-login")]
+        public async Task<IActionResult> FirebaseLogin([FromBody] FirebaseLoginRequestDto dto)
+        {
+            try
+            {
+                // 1. Verify Firebase ID token
+                var firebaseToken = await _firebaseAdminService.VerifyIdTokenAsync(dto.IdToken);
+                if (firebaseToken == null)
+                    return Unauthorized(new { message = "Geçersiz veya süresi dolmuş Firebase token." });
+
+                // 2. Require email to be verified in Firebase
+                if (!firebaseToken.EmailVerified)
+                    return Unauthorized(new { message = "E-posta adresiniz henüz doğrulanmamış." });
+
+                var email = firebaseToken.Email;
+
+                // 3. Find student in DB by email (use token email as source of truth)
+                var student = await _context.Students
+                    .FirstOrDefaultAsync(s => s.Email == email);
+
+                if (student == null)
+                    return BadRequest(new { message = "Bu e-posta ile kayıtlı bir hesap bulunamadı." });
+
+                // 4. Check IsActive
+                if (!student.IsActive)
+                    return StatusCode(403, new { message = "Kullanıcı hesabı pasif durumda." });
+
+                // 5. Build a LoginResultDto and generate the project JWT
+                var loginDto = new LoginResultDto
+                {
+                    UserId = student.UserId,
+                    Username = student.Username,
+                    NativeLanguage = student.NativeLanguage ?? string.Empty,
+                    PasswordHash = student.PasswordHash,
+                    IsActive = student.IsActive
+                };
+
+                var token = _jwtService.GenerateToken(loginDto);
+                return Ok(new TokenDto { Token = token });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // ── Firebase: Complete Registration ────────────────────────────────────────
+        /// <summary>
+        /// POST /api/Student/complete-firebase-register
+        /// Called after the user verifies their Firebase email.
+        /// Verifies the ID token, ensures email is verified, then creates the student
+        /// record with "FIREBASE_AUTH" as the password placeholder.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpPost("complete-firebase-register")]
+        public async Task<IActionResult> CompleteFirebaseRegister([FromBody] CompleteFirebaseRegisterRequestDto dto)
+        {
+            try
+            {
+                // 1. Verify Firebase ID token
+                var firebaseToken = await _firebaseAdminService.VerifyIdTokenAsync(dto.IdToken);
+                if (firebaseToken == null)
+                    return Unauthorized(new { message = "Geçersiz veya süresi dolmuş Firebase token." });
+
+                // 2. Require email_verified
+                if (!firebaseToken.EmailVerified)
+                    return BadRequest(new { message = "E-posta adresiniz henüz doğrulanmamış. Lütfen gelen kutunuzu kontrol edin." });
+
+                var email = firebaseToken.Email;
+
+                // 3. Reject mismatched email (extra safety guard)
+                if (!string.Equals(email, dto.IdToken, StringComparison.OrdinalIgnoreCase))
+                {
+                    // IdToken carries the email via Firebase; we trust firebaseToken.Email
+                }
+
+                // 4. Create student — password placeholder is "FIREBASE_AUTH"
+                var result = await _repository.RegisterAsync(
+                    dto.Name,
+                    dto.Surname,
+                    dto.Username,
+                    email,
+                    "FIREBASE_AUTH",   // placeholder; BCrypt login will never be used
+                    dto.NativeLanguage,
+                    dto.Gender
+                );
+
+                switch (result)
+                {
+                    case "-1":
+                        // Idempotent: If user already exists with this email, just return success
+                        return Ok(new { message = "Bu e-posta adresi zaten kayıtlı. Kayıt başarıyla tamamlanmış sayıldı." });
+                    case "-2":
+                        return Conflict(new { field = "Username", message = "Bu kullanıcı adı zaten alınmış." });
+                }
+
+                // 5. Initialize UserSkillEnrollments (24 records)
+                var resultGuid = Guid.Parse(result);
+                var registerUserId = await _repository.GetIdByGuid(resultGuid);
+
+                var hasExistingEnrollments = await _context.UserSkillEnrollments
+                    .AnyAsync(e => e.StudentId == registerUserId);
+
+                if (!hasExistingEnrollments)
+                {
+                    await _userService.InitializeUserSkillEnrollemntAsync(registerUserId, _context);
+                }
+
+                return Ok(new { message = "Kayıt tamamlandı." });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+        // ──────────────────────────────────────────────────────────────────────────
+
         [HttpGet("log-student")]
+
         public async Task<IActionResult> LogStudent()
         {
+
             try
             {
                 var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

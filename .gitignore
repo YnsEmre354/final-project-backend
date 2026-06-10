@@ -7,3 +7,10 @@
 .vscode/
 .env.
 .env.*
+
+# Firebase service account — NEVER commit these
+firebase-service-account*.json
+serviceAccount*.json
+service-account*.json
+*-firebase-adminsdk-*.json
+firebase_credentials.json

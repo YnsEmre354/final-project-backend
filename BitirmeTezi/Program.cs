@@ -2,18 +2,29 @@ using Microsoft.EntityFrameworkCore;
 using BitirmeTezi.Data;
 using BitirmeTezi.Interface;
 using BitirmeTezi.Repository;
-using BitirmeTezi.Auth; 
+using BitirmeTezi.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using BitirmeTezi.Service;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    Console.WriteLine("[WARNING] DefaultConnection string is null or empty!");
+}
+else
+{
+    Console.WriteLine("[INFO] DefaultConnection string is found and not empty.");
+}
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 // -------------------------------------------------------------
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
@@ -51,6 +62,7 @@ builder.WebHost.UseUrls(
 
 
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<FirebaseAdminService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -69,6 +81,27 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
+// ── Firebase Admin SDK Initialization ─────────────────────────────────────
+// Set FIREBASE_SERVICE_ACCOUNT_PATH env variable to the path of your
+// Firebase service account JSON. Never commit the JSON file.
+var firebaseServiceAccountPath = Environment.GetEnvironmentVariable("FIREBASE_SERVICE_ACCOUNT_PATH");
+if (!string.IsNullOrEmpty(firebaseServiceAccountPath) && File.Exists(firebaseServiceAccountPath))
+{
+    if (FirebaseApp.DefaultInstance == null)
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = GoogleCredential.FromFile(firebaseServiceAccountPath)
+        });
+    }
+}
+else
+{
+    Console.WriteLine("[WARNING] FIREBASE_SERVICE_ACCOUNT_PATH is not set or file does not exist. " +
+        "Firebase Admin SDK will not be initialized. Firebase endpoints will return 500.");
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 var app = builder.Build();
 app.UseCors("AllowFlutterWebDev");
 
@@ -86,7 +119,10 @@ if (builder.Environment.IsDevelopment())
     clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthorization();
 
